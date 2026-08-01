@@ -1,0 +1,14 @@
+*.tmp
+*.log
+*.log.*
+.DS_Store
+Thumbs.db
+desktop.ini
+.Trash-*
+$RECYCLE.BIN
+.stversions
+*.part
+*.crdownload
+System Volume Information
+*.ts.net.crt
+*.ts.net.key

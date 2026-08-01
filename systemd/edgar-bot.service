@@ -1,0 +1,23 @@
+[Unit]
+Description=Edgar WhatsApp bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Change to the user that owns /opt/edgar-bot
+User=CHANGEME
+WorkingDirectory=/opt/edgar-bot
+EnvironmentFile=/opt/edgar-bot/.env
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node edgar-bot.js
+Restart=always
+RestartSec=10
+StandardOutput=append:/opt/edgar-bot/logs/edgar-bot.log
+StandardError=append:/opt/edgar-bot/logs/edgar-bot.log
+SyslogIdentifier=edgar-bot
+KillSignal=SIGTERM
+TimeoutStopSec=10
+
+[Install]
+WantedBy=multi-user.target

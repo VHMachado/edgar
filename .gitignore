@@ -1,0 +1,20 @@
+# Secrets — never commit these
+.env
+scripts/config.env
+scripts/restic.env
+*.env
+!*.env.example
+
+# WhatsApp session (contains credentials for your account)
+bot/creds/
+creds/
+
+# Runtime state and logs
+bot/state.json
+state.json
+logs/
+*.log
+last-alert-state.json
+*.lock
+
+node_modules/

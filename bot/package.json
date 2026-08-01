@@ -1,0 +1,16 @@
+{
+  "name": "edgar-bot",
+  "version": "1.0.0",
+  "description": "Deterministic WhatsApp bot for monitoring a home server",
+  "main": "edgar-bot.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "node edgar-bot.js",
+    "test": "node test-dispatch.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^7.0.0-rc.9",
+    "pino": "^10.3.1",
+    "qrcode-terminal": "^0.12.0"
+  }
+}
