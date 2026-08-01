@@ -74,7 +74,7 @@ checked; drop the ones you do not run.
 sudo mkdir -p /opt/edgar-bot /opt/nas-monitor
 sudo chown -R "$USER" /opt/edgar-bot /opt/nas-monitor
 
-git clone https://github.com/YOURNAME/edgar.git
+git clone https://github.com/VHMachado/edgar.git
 cp -r edgar/bot/*     /opt/edgar-bot/
 cp -r edgar/scripts/* /opt/nas-monitor/
 chmod +x /opt/nas-monitor/*.sh
