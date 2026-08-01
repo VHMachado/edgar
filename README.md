@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/edgar.jpg" alt="Edgar" width="320">
+</p>
+
 # Edgar
 
 A WhatsApp bot that watches a home server and answers questions about it.
