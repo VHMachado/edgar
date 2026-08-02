@@ -11,7 +11,7 @@ const HELP = [
   'status — overall summary',
   'issues — only what is broken',
   'cron — last result of each job',
-  'pihole | syncthing | tailscale | samba | vaultwarden — one service',
+  'pihole | unbound | syncthing | tailscale | samba | vaultwarden — one service',
   '',
   '*Hardware*',
   'cpu | ram | swap | disk | uptime | resources',

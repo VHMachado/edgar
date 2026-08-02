@@ -39,6 +39,7 @@ const CASES = [
   ['issues', 'statusIssues'],
   ['cron', 'statusCron'],
   ['pihole', 'statusService'],
+  ['unbound', 'statusService'],
   ['vaultwarden?', 'statusService'],
   ['cpu', 'resource'],
   ['disk', 'resource'],

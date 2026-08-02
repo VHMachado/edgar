@@ -18,6 +18,7 @@ input, same output, every time — and no API bill.
 
 📡 Services
 ✅ 🛡️ pihole — FTL up, DNS resolving (example.com -> 93.184.216.34)
+✅ 🌐 unbound — Recursion up on port 5335 (example.com -> 93.184.216.34)
 ✅ 🔄 syncthing — Unit active, API answering, all folders healthy
 ✅ 🔒 tailscale — Connected, IP 100.x.y.z, 4 active peer(s)
 ✅ 🔑 vaultwarden — Container running, HTTPS answering
@@ -62,7 +63,7 @@ SSH round-trip on every message.
 - A **second phone number** for the bot. It logs into WhatsApp as that number by
   scanning a QR code, exactly like WhatsApp Web. Do not use your own number —
   the bot ignores messages it sends itself, and you want to text *it*.
-- Optional, per feature: Pi-hole, Syncthing, Tailscale, Samba, Docker +
+- Optional, per feature: Pi-hole, Unbound, Syncthing, Tailscale, Samba, Docker +
   Vaultwarden, the Bitwarden CLI (`bw`), `restic` + a Backblaze B2 bucket.
 
 Nothing is mandatory. `CHECKS` in `config.env` decides which services get
@@ -165,7 +166,7 @@ Text the bot `status`. You should get an answer.
 | `status`, `hi`, `good morning` | every service, one line each |
 | `issues` | only what is broken |
 | `cron` | last result of each wrapped job |
-| `pihole`, `syncthing`, `tailscale`, `samba`, `vaultwarden` | one service |
+| `pihole`, `unbound`, `syncthing`, `tailscale`, `samba`, `vaultwarden` | one service |
 | `cpu`, `ram`, `swap`, `disk`, `uptime` | one metric |
 | `resources` | all of them |
 | `panel pihole`, `panel syncthing`, `panel tailscale` | a detailed panel |

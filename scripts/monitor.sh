@@ -51,6 +51,26 @@ check_pihole() {
 }
 
 # -----------------------------------------------------------
+# Unbound — the recursive resolver Pi-hole forwards to
+# -----------------------------------------------------------
+check_unbound() {
+    if ! systemctl is-active --quiet unbound 2>/dev/null; then
+        add_service "unbound" "error" "unbound is not active — Pi-hole has no upstream"
+        return
+    fi
+
+    local port dns_result
+    port="${UNBOUND_PORT:-5335}"
+    dns_result=$(timeout "$SERVICE_TIMEOUT" dig @127.0.0.1 -p "$port" example.com +short 2>/dev/null | head -1 || true)
+
+    if [ -n "$dns_result" ]; then
+        add_service "unbound" "ok" "Recursion up on port $port (example.com -> $dns_result)"
+    else
+        add_service "unbound" "warn" "unbound up but did not answer on port $port within ${SERVICE_TIMEOUT}s"
+    fi
+}
+
+# -----------------------------------------------------------
 # Syncthing — unit active, API reachable, no folder in error
 # -----------------------------------------------------------
 check_syncthing() {

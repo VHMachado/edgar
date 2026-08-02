@@ -76,6 +76,7 @@ const SERVICE_EMOJIS = {
   tailscale: '🔒',
   samba: '📁',
   vaultwarden: '🔑',
+  unbound: '🌐',
 };
 
 function formatStatusAll(json) {

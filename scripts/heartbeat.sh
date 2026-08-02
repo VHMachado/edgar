@@ -45,7 +45,7 @@ if [[ $MON_OK -eq 1 ]]; then
   done < <(echo "$MON_JSON" | jq -r '
     .services[] |
     .name as $name |
-    ({"pihole":"🛡️","syncthing":"🔄","tailscale":"🔒","samba":"📁","vaultwarden":"🔑"}[$name] // "⚙️") as $emoji |
+    ({"pihole":"🛡️","unbound":"🌐","syncthing":"🔄","tailscale":"🔒","samba":"📁","vaultwarden":"🔑"}[$name] // "⚙️") as $emoji |
     (if .status == "ok" then "✅" elif .status == "warn" then "⚠️" else "🔴" end)
     + " " + $emoji + " " + $name + " — " + (if .details != "" then .details else .status end)
   ')
