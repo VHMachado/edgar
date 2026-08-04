@@ -182,7 +182,10 @@ function startHttp() {
       res.statusCode = 404;
       return res.end(JSON.stringify({ error: 'not found' }));
     }
-    if (req.headers['x-edgar-token'] !== config.HTTP_TOKEN) {
+    // Jellyseerr's webhook can only send an "Authorization" header, so accept
+    // either name. The value is the raw token in both cases — no Bearer prefix.
+    const token = req.headers['x-edgar-token'] || req.headers['authorization'];
+    if (!token || token !== config.HTTP_TOKEN) {
       res.statusCode = 401;
       return res.end(JSON.stringify({ error: 'unauthorized' }));
     }
@@ -226,6 +229,27 @@ function startHttp() {
     http.createServer(handler).listen(config.HTTP_PORT, config.HTTP_EXTRA_HOST, () => {
       logger.info({ host: config.HTTP_EXTRA_HOST, port: config.HTTP_PORT }, 'http listening (extra)');
     });
+  }
+
+  // The Docker bridge does not exist yet when the bot starts at boot, so this
+  // bind fails until Docker is up. Retry instead of giving up on the webhook.
+  if (config.HTTP_DOCKER_HOST) {
+    const bindDocker = (attempt = 1) => {
+      const srv = http.createServer(handler);
+      srv.on('error', (err) => {
+        if (attempt >= 20) {
+          logger.warn({ err: err.message, host: config.HTTP_DOCKER_HOST },
+            'http docker bind gave up after 20 attempts');
+          return;
+        }
+        setTimeout(() => bindDocker(attempt + 1), 15000);
+      });
+      srv.listen(config.HTTP_PORT, config.HTTP_DOCKER_HOST, () => {
+        logger.info({ host: config.HTTP_DOCKER_HOST, port: config.HTTP_PORT },
+          'http listening (docker)');
+      });
+    };
+    bindDocker();
   }
 }
 

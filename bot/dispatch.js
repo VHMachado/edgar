@@ -17,6 +17,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 const h = require('./handlers');
+const m = require('./media');
 
 const DISPATCH = [
   // Help
@@ -33,6 +34,21 @@ const DISPATCH = [
   { pattern: /^\s*vault\s+delete\s+(.+)$/i, handler: h.vaultDelete },
   { pattern: /^\s*vault\s+(?:get|show)\s+(.+?)\s*\??\s*$/i, handler: h.vaultGet },
   { pattern: /^\s*vault\s+(?:list|ls)\s*\??\s*$/i, handler: h.vaultList },
+
+  // Media — Jellyseerr for movies/series, Prowlarr for books.
+  // "grab <n>" sits above the searches: it consumes the pending pick, and a
+  // search word followed by a number should not be mistaken for one.
+  { pattern: /^\s*(?:grab|get|want)\s+(\d+)\s*$/i, handler: m.request },
+  { pattern: /^\s*(?:movies?|films?)\s+(.+)$/i, handler: m.searchMovie },
+  { pattern: /^\s*(?:series|shows?|tv)\s+(.+)$/i, handler: m.searchTv },
+  { pattern: /^\s*(?:books?|ebooks?)\s+(.+)$/i, handler: m.searchBook },
+  { pattern: /^\s*(?:queue|downloading|downloads?)\s*\??\s*$/i, handler: m.queue },
+
+  // Power the whole stack. Above the per-service status line, which matches a
+  // bare service name and would otherwise swallow nothing here — but keeping
+  // the pair together makes the ordering intent obvious.
+  { pattern: /^\s*media\s+(?:up|start)\s*$/i, handler: m.mediaUp },
+  { pattern: /^\s*media\s+(?:down|stop)\s*$/i, handler: m.mediaDown },
 
   // Detailed panels
   { pattern: /^\s*(?:panel|dashboard)\s+(pihole|syncthing|tailscale)\s*$/i, handler: h.panel },
