@@ -1,8 +1,14 @@
 <p align="center">
-  <img src="docs/edgar.png" alt="Edgar" width="220">
+  <img src="docs/edgar-banner.png" alt="Edgar" width="100%">
 </p>
 
-<h1 align="center">Edgar</h1>
+<p align="center">
+  <img src="https://img.shields.io/badge/license-MIT-ff3cac" alt="license">
+  <img src="https://img.shields.io/badge/node-%E2%89%A520-1dd3b0" alt="node">
+  <img src="https://img.shields.io/badge/LLM-none-ff8c00" alt="no llm">
+  <img src="https://img.shields.io/badge/platform-linux%20%2B%20systemd-6a5acd" alt="platform">
+  <img src="https://img.shields.io/badge/WhatsApp-Baileys-00b4ff" alt="whatsapp">
+</p>
 
 A WhatsApp bot that watches a home server and answers questions about it.
 
@@ -30,9 +36,23 @@ input, same output, every time — and no API bill.
 ⏱️ Uptime: 12d 4h 18m
 ```
 
----
+<p align="center"><img src="docs/rainbow-divider.png" alt="" width="100%" height="4"></p>
 
-## How it fits together
+## 🐅 Índice
+
+- [Como as peças se encaixam](#how-it-fits-together)
+- [Requisitos](#requirements)
+- [Instalação](#install)
+- [Comandos](#commands)
+- [Personalizando o Edgar](#customizing-edgar)
+- [A API HTTP](#the-http-api)
+- [O contrato JSON](#the-json-contract)
+- [Segurança](#security)
+- [Troubleshooting](#troubleshooting)
+- [Licença](#license)
+
+<a id="how-it-fits-together"></a>
+## 🌈 How it fits together
 
 ```
 WhatsApp  ──►  edgar-bot.js  ──►  dispatch.js  ──►  handlers.js  ──►  scripts/*.sh
@@ -55,9 +75,8 @@ SSH round-trip on every message.
 
 [Baileys]: https://github.com/WhiskeySockets/Baileys
 
----
-
-## Requirements
+<a id="requirements"></a>
+## 🐯 Requirements
 
 - Linux with systemd (developed on Debian 12)
 - Node.js 20+
@@ -72,9 +91,8 @@ SSH round-trip on every message.
 Nothing is mandatory. `CHECKS` in `config.env` decides which services get
 checked; drop the ones you do not run.
 
----
-
-## Install
+<a id="install"></a>
+## 🌈 Install
 
 ### 1. Put the files in place
 
@@ -174,9 +192,8 @@ Give any new message-sending job its own offset rather than a bare `*/N`.
 
 Text the bot `status`. You should get an answer.
 
----
-
-## Commands
+<a id="commands"></a>
+## 🐅 Commands
 
 | You send | You get |
 |---|---|
@@ -203,7 +220,11 @@ Text the bot `status`. You should get an answer.
 Anything unrecognised gets the help text, so a typo never does something
 surprising.
 
-### Changing the commands
+<a id="customizing-edgar"></a>
+## 🌈 Personalizando o Edgar
+
+<details>
+<summary><strong>Changing the commands</strong></summary>
 
 Two files, and nothing else needs to know:
 
@@ -253,7 +274,10 @@ It asserts which handler each message reaches, without touching the shell or the
 network. Add a line to `CASES` for whatever you added — the bugs this catches
 are the ordering ones, where a generic pattern swallows a specific one.
 
-### The media commands
+</details>
+
+<details>
+<summary><strong>The media commands</strong></summary>
 
 Off by default. Fill in the keys and they turn on:
 
@@ -314,13 +338,19 @@ sudo ufw allow from 172.20.0.0/16 to any port 18790 proto tcp
 Jellyseerr can only send an `Authorization` header, so `/send` accepts either
 that or `X-Edgar-Token`. The value is the raw token — no `Bearer` prefix.
 
-### Speaking another language
+</details>
+
+<details>
+<summary><strong>Speaking another language</strong></summary>
 
 Edgar was originally Portuguese. Nothing in the design is English-specific:
 translate the patterns in `dispatch.js`, the strings in `handlers.js`, and the
 text in `help.js`. The scripts print JSON, so they do not need touching.
 
-### Adding a runnable job
+</details>
+
+<details>
+<summary><strong>Adding a runnable job</strong></summary>
 
 Anything in `EDGAR_JOBS` becomes `run <name>`:
 
@@ -336,9 +366,10 @@ a failure triggers an alert. Wrap your real cron jobs the same way:
 0 12 * * * /opt/nas-monitor/cron-wrapper.sh "photos" /home/me/.venv/bin/python /home/me/organize-photos.py
 ```
 
----
+</details>
 
-## The HTTP API
+<a id="the-http-api"></a>
+## 🐯 The HTTP API
 
 The bot listens on `127.0.0.1:18790`. Anything on the box can message you:
 
@@ -363,9 +394,11 @@ token, so this must never face the internet.
 > Invoke-RestMethod -Uri $url -Method Post -Body $bytes -ContentType 'application/json' -Headers $headers
 > ```
 
----
+<a id="the-json-contract"></a>
+## 🌈 The JSON contract
 
-## The JSON contract
+<details>
+<summary><strong>Every field the bot reads from <code>scripts/*.sh</code></strong></summary>
 
 `handlers.js` parses these shapes. Change a field name in a script and the bot
 answers `❌ undefined` — which is exactly how this list came to be documented.
@@ -392,9 +425,10 @@ formatter:
 /opt/nas-monitor/status.sh all | jq keys
 ```
 
----
+</details>
 
-## Security
+<a id="security"></a>
+## 🐅 Security
 
 This bot reads your password vault over WhatsApp. Be deliberate about it.
 
@@ -424,9 +458,8 @@ This bot reads your password vault over WhatsApp. Be deliberate about it.
 - **Baileys is unofficial.** WhatsApp does not support this. Using it on a
   number you care about carries a real ban risk. Use a spare number.
 
----
-
-## Troubleshooting
+<a id="troubleshooting"></a>
+## 🌈 Troubleshooting
 
 ```bash
 systemctl status edgar-bot          # is it up
@@ -445,8 +478,11 @@ cd /opt/edgar-bot && node test-dispatch.js  # is routing sane
 | Emoji arrive as `?` | a PowerShell caller sending a string body (see above) |
 | `EDGAR_TOKEN is not set` at startup | `.env` missing, or `EnvironmentFile=` points elsewhere |
 
----
+<p align="center"><img src="docs/rainbow-divider.png" alt="" width="100%" height="4"></p>
 
+<a id="license"></a>
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+<p align="center">🐅🌈🐅</p>
