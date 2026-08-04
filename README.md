@@ -43,6 +43,8 @@ WhatsApp  ──►  edgar-bot.js  ──►  dispatch.js  ──►  handlers.j
 
 - **`bot/`** — the Node daemon. Talks to WhatsApp over [Baileys], routes
   messages, and exposes `POST /send` so anything else can push you a message.
+  `media.js` is the exception to the diagram above: it calls Jellyseerr and
+  Prowlarr over HTTP instead of shelling out.
 - **`scripts/`** — the plumbing. Every script prints JSON, so the bot never
   parses human text. `monitor.sh` runs from cron and writes the state;
   everything else reads it.
@@ -65,6 +67,7 @@ SSH round-trip on every message.
   the bot ignores messages it sends itself, and you want to text *it*.
 - Optional, per feature: Pi-hole, Unbound, Syncthing, Tailscale, Samba, Docker +
   Vaultwarden, the Bitwarden CLI (`bw`), `restic` + a Backblaze B2 bucket.
+- Optional, for the media commands: Jellyseerr and Prowlarr.
 
 Nothing is mandatory. `CHECKS` in `config.env` decides which services get
 checked; drop the ones you do not run.
@@ -173,6 +176,9 @@ Text the bot `status`. You should get an answer.
 | `vault list` | every entry in the vault |
 | `vault get <site>` | username and password |
 | `vault delete <site>` → `vault confirm` | deletes to the vault trash |
+| `movie <name>`, `series <name>`, `book <name>` | search, numbered results |
+| `grab <n>` | request result `n` from the last search |
+| `queue` | what is downloading right now |
 | `heartbeat` | pushes the full summary right now |
 | `run <job>` | runs a job from `EDGAR_JOBS` |
 | `backup` | tail of the last backup log |
@@ -198,6 +204,8 @@ To teach an existing command a new word, add it to the alternation:
 
 To add a command: one entry here, one function in
 [`bot/handlers.js`](bot/handlers.js), one line in [`bot/help.js`](bot/help.js).
+(The media commands live in [`bot/media.js`](bot/media.js) instead, since they
+talk to HTTP APIs rather than shell scripts.)
 
 ```js
 // dispatch.js — above the generic patterns
@@ -229,6 +237,67 @@ cd bot && node test-dispatch.js
 It asserts which handler each message reaches, without touching the shell or the
 network. Add a line to `CASES` for whatever you added — the bugs this catches
 are the ordering ones, where a generic pattern swallows a specific one.
+
+### The media commands
+
+Off by default. Fill in the keys and they turn on:
+
+```bash
+# /opt/edgar-bot/.env
+JELLYSEERR_KEY=...   # Jellyseerr > Settings > General > API Key
+PROWLARR_KEY=...     # Prowlarr > Settings > General
+```
+
+Then a search, a pick, and a notification:
+
+```
+you:   series deep space nine
+edgar: 📺 Results for "deep space nine":
+
+       1. *Star Trek: Deep Space Nine* (1993)
+       2. ...
+
+       Reply: grab 1
+you:   grab 1
+edgar: ✅ Requested: *Star Trek: Deep Space Nine* (1993)
+```
+
+A pick expires after five minutes, so a stale `grab 1` cannot request something
+you no longer have on screen.
+
+Movies and series go through Jellyseerr, which hands off to Sonarr/Radarr.
+**Books skip that layer** and talk to Prowlarr directly — Readarr was retired
+upstream and LazyLibrarian's add-book API is broken (it answers `OK` and writes
+nothing), so there is no book manager left to request from. Prowlarr searches
+and grabs on its own, dropping the torrent into a `books` category for whatever
+imports your library. Book results are sorted by seeders, because a dead swarm
+never finishes.
+
+#### Getting notified when it lands
+
+`setup-webhook.js` points Jellyseerr's webhook back at the bot:
+
+```bash
+cd /opt/edgar-bot && node setup-webhook.js --test
+```
+
+Jellyseerr runs in a container, and `127.0.0.1` inside a container is not the
+host — so the bot has to listen on the Docker bridge gateway as well:
+
+```bash
+# /opt/edgar-bot/.env
+EDGAR_HTTP_DOCKER_HOST=172.20.0.1
+```
+
+Pin that subnet in your compose file or the address will move, and let it
+through the firewall:
+
+```bash
+sudo ufw allow from 172.20.0.0/16 to any port 18790 proto tcp
+```
+
+Jellyseerr can only send an `Authorization` header, so `/send` accepts either
+that or `X-Edgar-Token`. The value is the raw token — no `Bearer` prefix.
 
 ### Speaking another language
 

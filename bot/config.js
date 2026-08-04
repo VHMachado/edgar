@@ -39,6 +39,12 @@ module.exports = {
   // tailnet can POST /send. Empty = loopback only.
   HTTP_EXTRA_HOST: process.env.EDGAR_HTTP_EXTRA_HOST || '',
 
+  // Optional third bind, for a Docker bridge gateway. A container cannot reach
+  // the host on 127.0.0.1, so a webhook from Jellyseerr needs the bot listening
+  // on the gateway address of its network. Empty = skip it.
+  // Pin the subnet in your compose file, or this address moves.
+  HTTP_DOCKER_HOST: process.env.EDGAR_HTTP_DOCKER_HOST || '',
+
   // Paths
   CREDS_DIR: process.env.EDGAR_CREDS_DIR || '/opt/edgar-bot/creds',
   STATE_FILE: process.env.EDGAR_STATE_FILE || '/opt/edgar-bot/state.json',
@@ -46,6 +52,13 @@ module.exports = {
 
   // Default timeout for shell calls (ms). Vault handlers override it.
   EXEC_TIMEOUT_MS: Number(process.env.EDGAR_EXEC_TIMEOUT_MS || 20000),
+
+  // Media stack. Leave the keys empty to disable the media commands — they
+  // throw a clear error instead of failing halfway.
+  JELLYSEERR_URL: process.env.JELLYSEERR_URL || 'http://127.0.0.1:5055',
+  JELLYSEERR_KEY: process.env.JELLYSEERR_KEY || '',
+  PROWLARR_URL: process.env.PROWLARR_URL || 'http://127.0.0.1:9696',
+  PROWLARR_KEY: process.env.PROWLARR_KEY || '',
 
   // Named commands runnable over chat with "run <name>", as JSON:
   //   EDGAR_JOBS={"photos":"/home/me/.venv/bin/python /home/me/organize.py"}

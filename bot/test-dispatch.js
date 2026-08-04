@@ -13,6 +13,10 @@ process.env.EDGAR_JOBS = '{"photos":"/bin/true"}';
 const assert = require('assert');
 const { DISPATCH } = require('./dispatch');
 const h = require('./handlers');
+const m = require('./media');
+
+// Handlers live in two modules; look the name up in both.
+const HANDLERS = { ...h, ...m };
 
 // Entries whose handler is an inline arrow, matched by position instead.
 const INLINE = new Map([
@@ -26,7 +30,7 @@ function route(text) {
   if (i === -1) return 'help'; // dispatch() falls through to help
   if (INLINE.has(i)) return INLINE.get(i);
   const fn = DISPATCH[i].handler;
-  const name = Object.keys(h).find((k) => h[k] === fn);
+  const name = Object.keys(HANDLERS).find((k) => HANDLERS[k] === fn);
   return name || `<anonymous #${i}>`;
 }
 
@@ -58,9 +62,28 @@ const CASES = [
   ['vault delete gmail', 'vaultDelete'],
   ['vault confirm', 'vaultConfirm'],
 
+  ['movie dune', 'searchMovie'],
+  ['film dune', 'searchMovie'],
+  ['series deep space nine', 'searchTv'],
+  ['show deep space nine', 'searchTv'],
+  ['book sapiens', 'searchBook'],
+  ['ebook sapiens', 'searchBook'],
+  ['grab 1', 'request'],
+  ['get 2', 'request'],
+  ['queue', 'queue'],
+  ['downloading', 'queue'],
+
   // Ordering traps: the more specific pattern has to win.
   ['status now', 'heartbeatTrigger'],
   ['vault delete confirm', 'vaultDelete'],
+  // "get <n>" is a pick; "vault get <site>" is the vault. Both start with a
+  // word that the other could claim.
+  ['vault get gmail', 'vaultGet'],
+  // A search needs an argument — a bare word is not a search.
+  ['movie', 'help'],
+  ['book', 'help'],
+  // "grab" only takes a number, so this is not a pick.
+  ['grab the milk', 'help'],
 
   // Chatter must not trigger anything — patterns stay anchored.
   ['what is the status of my order', 'help'],

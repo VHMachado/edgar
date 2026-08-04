@@ -399,4 +399,6 @@ module.exports = {
   vaultList, vaultGet, vaultDelete, vaultConfirm,
   runJob, heartbeatTrigger, backupStatus,
   restartEdgar, help,
+  // media.js keeps its pending picks in the same state file.
+  readState, writeState,
 };
