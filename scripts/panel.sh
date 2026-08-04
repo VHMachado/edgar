@@ -10,17 +10,8 @@ source "$SCRIPT_DIR/config.env"
 
 SERVICE="${1:-}"
 
-# 20-char progress bar
-bar20() {
-    local pct=$1 filled empty b=""
-    filled=$(awk -v p="$pct" 'BEGIN{printf "%d", (p/100)*20 + 0.5}')
-    [ "$filled" -gt 20 ] && filled=20
-    [ "$filled" -lt 0 ]  && filled=0
-    empty=$((20 - filled))
-    for ((i=0;i<filled;i++)); do b+=$'\xe2\x96\x88'; done
-    for ((i=0;i<empty;i++)); do b+=$'\xe2\x96\x91'; done
-    echo "$b"
-}
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/lib.sh"
 
 fmt_num() {
     python3 -c "n=int(float('$1')); print(f'{n:,}')"

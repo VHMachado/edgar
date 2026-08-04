@@ -10,7 +10,7 @@
 // That is why the two live in the same file.
 
 const config = require('./config');
-const { readState, writeState } = require('./handlers');
+const { readState, writeState, runShell } = require('./handlers');
 
 // How long a search result list stays pickable. Long enough to walk away from
 // the phone, short enough that a stale "grab 1" cannot request the wrong thing.
@@ -25,6 +25,14 @@ const HTTP_TIMEOUT_MS = 20000;
 // Prowlarr queries every indexer before answering. Measured at 22.7s with ten
 // of them, so the 20s above is not enough.
 const PROWLARR_TIMEOUT_MS = 60000;
+
+// Compose file for the media stack, driven by "media up" / "media down".
+// Empty disables both commands rather than running compose against nothing.
+const COMPOSE = config.MEDIA_COMPOSE_FILE
+  ? `docker compose -f ${config.MEDIA_COMPOSE_FILE}`
+  : '';
+// Bringing a nine-container stack up on slow hardware takes well over a minute.
+const COMPOSE_TIMEOUT_MS = 180000;
 
 // Jellyseerr media availability codes.
 const AVAIL = { 2: 'pending', 3: 'downloading', 4: 'partial', 5: 'in the library' };
@@ -199,27 +207,87 @@ async function request(_msg, match, opts = {}) {
   return `✅ Requested: *${item.title}* (${item.year})\nI will tell you when it is ready.`;
 }
 
-async function queue(_msg, _match, opts = {}) {
-  if (opts.sendFeedback) await opts.sendFeedback('🔍 Checking the queue...');
-  const data = await jsr('/request?take=20&filter=processing');
-  const reqs = data.results || [];
-  if (!reqs.length) return '📭 Queue is empty.';
-
-  // One extra request per row to turn a tmdbId into a title — the request API
-  // does not return one. Fine at this size; cache it if the queue ever grows.
-  const lines = await Promise.all(
-    reqs.map(async (r) => {
-      const m = r.media || {};
-      const emoji = m.mediaType === 'tv' ? '📺' : '🎬';
-      try {
-        const det = await jsr(`/${m.mediaType}/${m.tmdbId}`);
-        return `${emoji} ${det.title || det.name}`;
-      } catch {
-        return `${emoji} tmdb:${m.tmdbId}`;
-      }
-    })
-  );
-  return `📥 *Downloading now* (${lines.length})\n\n${lines.join('\n')}`;
+// Same bar the panels use, so progress looks the same everywhere.
+function bar20(pct) {
+  const filled = Math.min(20, Math.max(0, Math.round((pct / 100) * 20)));
+  return '\u2588'.repeat(filled) + '\u2591'.repeat(20 - filled);
 }
 
-module.exports = { searchMovie, searchTv, searchBook, request, queue };
+const CAT_EMOJI = { tv: '📺', movies: '🎬', books: '📚' };
+
+// Reads the download client, not Jellyseerr. Jellyseerr's "processing" filter
+// is a poor proxy for "still downloading": it only clears once the media server
+// has scanned the file and the availability sync has run, so a finished
+// download keeps showing up here. Worse, a whole-series request whose seasons
+// were later unmonitored stays PARTIALLY_AVAILABLE forever and never leaves the
+// list at all.
+async function queue(_msg, _match, opts = {}) {
+  if (opts.sendFeedback) await opts.sendFeedback('🔍 Checking the queue...');
+
+  const r = await runShell(`${config.NAS_MONITOR_DIR}/downloads.sh`, 30000);
+  if (!r.ok) return `❌ Could not read the queue: ${r.stderr || 'downloads.sh failed'}`;
+
+  let data;
+  try {
+    data = JSON.parse(r.stdout);
+  } catch {
+    return '❌ downloads.sh returned something that is not JSON';
+  }
+
+  if (!data.ok) return `❌ qBittorrent is unavailable${data.error ? `: ${data.error}` : ''}.`;
+  if (!data.count_downloading) return '📭 Nothing downloading right now.';
+
+  const lines = data.downloading.map((t) => {
+    const emoji = CAT_EMOJI[t.category] || '📦';
+    const name = t.name.length > 38 ? `${t.name.slice(0, 38)}…` : t.name;
+    return `${emoji} ${name}\n${bar20(t.progress_pct)} ${t.progress_pct}% · ${t.speed} · ETA ${t.eta}`;
+  });
+
+  return `📥 *Downloading now* (${lines.length})\n\n${lines.join('\n\n')}`;
+}
+
+// ---- stack power ----
+
+// docker compose writes its progress to stderr, so a non-empty stderr is not a
+// failure signal here. The exit code is.
+function tailErr(r, n = 3) {
+  return (r.stderr || r.stdout || '(no output)').split('\n').slice(-n).join('\n');
+}
+
+// Counts come from compose itself, never a hardcoded list: the stack changes
+// (a service gets swapped out) and a fixed list silently goes wrong.
+async function stackCount() {
+  const r = await runShell(
+    `echo "$(${COMPOSE} ps -q | wc -l) $(${COMPOSE} config --services | wc -l)"`,
+    30000
+  );
+  const [running, total] = r.stdout.split(/\s+/).map(Number);
+  return { running: running || 0, total: total || 0 };
+}
+
+async function mediaUp(_msg, _match, opts = {}) {
+  if (!COMPOSE) return '⚙️ MEDIA_COMPOSE_FILE is not set — nothing to bring up.';
+  if (opts.sendFeedback) await opts.sendFeedback('⏳ Bringing the media stack up...');
+  const r = await runShell(`${COMPOSE} up -d`, COMPOSE_TIMEOUT_MS);
+  if (!r.ok) return `❌ Could not bring the stack up.\n${tailErr(r)}`;
+  const { running, total } = await stackCount();
+  return running === total
+    ? `✅ Media stack is up — ${running}/${total} containers.`
+    : `⚠️ Partly up — ${running}/${total} containers.`;
+}
+
+async function mediaDown(_msg, _match, opts = {}) {
+  if (!COMPOSE) return '⚙️ MEDIA_COMPOSE_FILE is not set — nothing to bring down.';
+  if (opts.sendFeedback) await opts.sendFeedback('⏳ Bringing the media stack down...');
+  const r = await runShell(`${COMPOSE} down`, COMPOSE_TIMEOUT_MS);
+  if (!r.ok) return `❌ Could not bring the stack down.\n${tailErr(r)}`;
+  const { running } = await stackCount();
+  return running === 0
+    ? '🛑 Media stack is down.'
+    : `⚠️ Partly down — ${running} container(s) still running.`;
+}
+
+module.exports = {
+  searchMovie, searchTv, searchBook, request, queue,
+  mediaUp, mediaDown,
+};

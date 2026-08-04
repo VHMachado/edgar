@@ -72,6 +72,10 @@ const CASES = [
   ['get 2', 'request'],
   ['queue', 'queue'],
   ['downloading', 'queue'],
+  ['media up', 'mediaUp'],
+  ['media start', 'mediaUp'],
+  ['media down', 'mediaDown'],
+  ['media stop', 'mediaDown'],
 
   // Ordering traps: the more specific pattern has to win.
   ['status now', 'heartbeatTrigger'],
@@ -82,6 +86,8 @@ const CASES = [
   // A search needs an argument — a bare word is not a search.
   ['movie', 'help'],
   ['book', 'help'],
+  // "media" alone powers nothing — the verb is required.
+  ['media', 'help'],
   // "grab" only takes a number, so this is not a pick.
   ['grab the milk', 'help'],
 

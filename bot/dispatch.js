@@ -44,6 +44,12 @@ const DISPATCH = [
   { pattern: /^\s*(?:books?|ebooks?)\s+(.+)$/i, handler: m.searchBook },
   { pattern: /^\s*(?:queue|downloading|downloads?)\s*\??\s*$/i, handler: m.queue },
 
+  // Power the whole stack. Above the per-service status line, which matches a
+  // bare service name and would otherwise swallow nothing here — but keeping
+  // the pair together makes the ordering intent obvious.
+  { pattern: /^\s*media\s+(?:up|start)\s*$/i, handler: m.mediaUp },
+  { pattern: /^\s*media\s+(?:down|stop)\s*$/i, handler: m.mediaDown },
+
   // Detailed panels
   { pattern: /^\s*(?:panel|dashboard)\s+(pihole|syncthing|tailscale)\s*$/i, handler: h.panel },
 

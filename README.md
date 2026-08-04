@@ -149,12 +149,26 @@ youruser ALL=(root) NOPASSWD: /bin/systemctl restart edgar-bot.service
 `crontab -e`:
 
 ```cron
-*/5  * * * * /opt/nas-monitor/monitor.sh   >> /opt/nas-monitor/logs/monitor.log 2>&1
-*/10 * * * * /opt/nas-monitor/alerts.sh    >> /opt/nas-monitor/logs/alerts-cron.log 2>&1
-*/30 * * * * /opt/nas-monitor/heartbeat.sh >> /opt/nas-monitor/logs/heartbeat-cron.log 2>&1
-0    4 * * * /opt/nas-monitor/cleanup.sh   >> /opt/nas-monitor/logs/cleanup.log 2>&1
-30  12 * * * /opt/nas-monitor/restic-backup.sh >> /opt/nas-monitor/logs/backup-cron.log 2>&1
+*/5     * * * * /opt/nas-monitor/monitor.sh         >> /opt/nas-monitor/logs/monitor.log 2>&1
+*/30    * * * * /opt/nas-monitor/heartbeat.sh       >> /opt/nas-monitor/logs/heartbeat-cron.log 2>&1
+5-55/10 * * * * /opt/nas-monitor/alerts.sh          >> /opt/nas-monitor/logs/alerts-cron.log 2>&1
+2-52/10 * * * * /opt/nas-monitor/downloads-report.sh >> /opt/nas-monitor/logs/downloads-cron.log 2>&1
+0       4 * * * /opt/nas-monitor/cleanup.sh         >> /opt/nas-monitor/logs/cleanup.log 2>&1
+30     12 * * * /opt/nas-monitor/restic-backup.sh   >> /opt/nas-monitor/logs/backup-cron.log 2>&1
 ```
+
+Those offsets are deliberate. Anything written as `*/N` fires on the hour, so
+`*/30` and `*/10` collide at :00 and :30 and you get two unrelated messages in
+the same second — a status summary and an alert, arriving as one wall of text.
+Staggering them keeps each message its own event:
+
+| Job | Fires at |
+|---|---|
+| `heartbeat.sh` | :00 :30 |
+| `downloads-report.sh` | :02 :12 :22 :32 :42 :52 |
+| `alerts.sh` | :05 :15 :25 :35 :45 :55 |
+
+Give any new message-sending job its own offset rather than a bare `*/N`.
 
 `monitor.sh` is the one that matters — without it, `status` has nothing to read.
 
@@ -178,7 +192,8 @@ Text the bot `status`. You should get an answer.
 | `vault delete <site>` → `vault confirm` | deletes to the vault trash |
 | `movie <name>`, `series <name>`, `book <name>` | search, numbered results |
 | `grab <n>` | request result `n` from the last search |
-| `queue` | what is downloading right now |
+| `queue` | what is downloading right now, with progress bars |
+| `media up`, `media down` | start or stop the whole media stack |
 | `heartbeat` | pushes the full summary right now |
 | `run <job>` | runs a job from `EDGAR_JOBS` |
 | `backup` | tail of the last backup log |
@@ -367,6 +382,7 @@ answers `❌ undefined` — which is exactly how this list came to be documented
 | `vaultwarden.sh search` | `{count, items: [{id, name, username}]}` |
 | `vaultwarden.sh delete` | `{deleted, errors}` |
 | `panel.sh <service>` | pre-formatted text, or `ERROR: …` |
+| `downloads.sh` | `{ok, downloading[], completed[], count_downloading, count_completed}` |
 | `fix-syncthing-markers.sh --check` | `{error_count, errors[], out_of_sync_count, out_of_sync[]}` |
 
 `status` is `ok`, `warn` or `error`. Check the real output before touching a

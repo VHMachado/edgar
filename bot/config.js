@@ -60,6 +60,10 @@ module.exports = {
   PROWLARR_URL: process.env.PROWLARR_URL || 'http://127.0.0.1:9696',
   PROWLARR_KEY: process.env.PROWLARR_KEY || '',
 
+  // Compose file behind "media up" / "media down". Empty disables both.
+  // The account running the bot needs to be in the docker group.
+  MEDIA_COMPOSE_FILE: process.env.MEDIA_COMPOSE_FILE || '',
+
   // Named commands runnable over chat with "run <name>", as JSON:
   //   EDGAR_JOBS={"photos":"/home/me/.venv/bin/python /home/me/organize.py"}
   // Each runs through scripts/cron-wrapper.sh, so the result also shows up

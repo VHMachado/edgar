@@ -15,6 +15,7 @@ source "$SCRIPT_DIR/notify.sh"
 
 STATUS_SH="$SCRIPT_DIR/status.sh"
 FIX_SYNCTHING="$SCRIPT_DIR/fix-syncthing-markers.sh"
+DOWNLOADS_SH="$SCRIPT_DIR/downloads.sh"
 LOG="$BASE_DIR/logs/alerts.log"
 STATE_FILE="$BASE_DIR/last-alert-state.json"
 
@@ -38,6 +39,8 @@ hash_json() {
 ISSUES_HASH=""
 RESOURCES_HASH=""
 SYNCTHING_HASH=""
+DL_NOTIFIED=""
+DL_SEEDED=0
 declare -A CRON_LAST_SEEN=()
 STATE_CHANGED=0
 
@@ -45,6 +48,12 @@ if [[ -f "$STATE_FILE" ]]; then
   ISSUES_HASH=$(jq -r '.issues_hash // ""' "$STATE_FILE" 2>/dev/null || echo "")
   RESOURCES_HASH=$(jq -r '.resources_hash // ""' "$STATE_FILE" 2>/dev/null || echo "")
   SYNCTHING_HASH=$(jq -r '.syncthing_hash // ""' "$STATE_FILE" 2>/dev/null || echo "")
+  DL_NOTIFIED=$(jq -r '.downloads_notified // [] | join(" ")' "$STATE_FILE" 2>/dev/null || echo "")
+  # Key absent means this is the first run since the feature landed. Anything
+  # already finished belongs to the past and must not be announced now.
+  if jq -e 'has("downloads_notified")' "$STATE_FILE" >/dev/null 2>&1; then
+    DL_SEEDED=1
+  fi
   while IFS="=" read -r key val; do
     [[ -n "$key" ]] && CRON_LAST_SEEN["$key"]="$val"
   done < <(jq -r '.cron_last_seen // {} | to_entries[] | .key + "=" + .value' "$STATE_FILE" 2>/dev/null || true)
@@ -60,8 +69,9 @@ save_state() {
     --arg rh "$RESOURCES_HASH" \
     --arg sh "$SYNCTHING_HASH" \
     --argjson cl "$cron_json" \
+    --argjson dn "$(printf '%s' "$DL_NOTIFIED" | jq -R 'split(" ") | map(select(length > 0))')" \
     --arg ts "$(date -Iseconds)" \
-    '{issues_hash: $ih, resources_hash: $rh, syncthing_hash: $sh, cron_last_seen: $cl, updated_at: $ts}' \
+    '{issues_hash: $ih, resources_hash: $rh, syncthing_hash: $sh, downloads_notified: $dn, cron_last_seen: $cl, updated_at: $ts}' \
     > "$STATE_FILE"
 }
 
@@ -241,12 +251,77 @@ check_cron_completion() {
   done < <(echo "$raw" | jq -c '.cron_jobs[]')
 }
 
+# ---- finished downloads ----
+
+check_downloads_completion() {
+  log "checking: downloads"
+  local raw
+  raw=$("$DOWNLOADS_SH" 2>/dev/null) || { log "  downloads.sh failed"; return; }
+
+  if [[ "$(echo "$raw" | jq -r '.ok')" != "true" ]]; then
+    log "  qBittorrent unavailable - skipping"
+    return
+  fi
+
+  # Everything qBittorrent still knows about, downloading or done. Used to drop
+  # hashes for torrents that have since been removed, so the list stays bounded.
+  local alive
+  alive=$(echo "$raw" | jq -r '(.downloading[].hash, .completed[].hash)')
+
+  # First run: record what is already finished without messaging about it.
+  if [[ $DL_SEEDED -eq 0 ]]; then
+    DL_NOTIFIED=$(echo "$raw" | jq -r '.completed[].hash' | tr '\n' ' ')
+    DL_SEEDED=1
+    STATE_CHANGED=1
+    log "  first run: marked $(echo $DL_NOTIFIED | wc -w) finished torrent(s) as seen"
+    return
+  fi
+
+  while IFS=$'\t' read -r hash name category size; do
+    [[ -z "$hash" ]] && continue
+    case " $DL_NOTIFIED " in
+      *" $hash "*) continue ;;
+    esac
+
+    DL_NOTIFIED="$DL_NOTIFIED $hash"
+    STATE_CHANGED=1
+    log "  finished: $name"
+
+    local emoji
+    case "$category" in
+      tv)     emoji="\xf0\x9f\x93\xba" ;;
+      movies) emoji="\xf0\x9f\x8e\xac" ;;
+      books)  emoji="\xf0\x9f\x93\x9a" ;;
+      *)      emoji="\xf0\x9f\x93\xa6" ;;
+    esac
+    emoji=$(printf "$emoji")
+
+    local msg
+    msg="$(printf '\xe2\x9c\x85 *Download finished*')"
+    msg+=$'\n'"${emoji} ${name}"
+    msg+=$'\n'"${size}"
+    send_msg "$msg"
+  done < <(echo "$raw" | jq -r '.completed[] | [.hash, .name, .category, .size] | @tsv')
+
+  # Prune: keep only what qBittorrent still has.
+  local pruned=""
+  for h in $DL_NOTIFIED; do
+    if grep -qx "$h" <<< "$alive"; then
+      pruned="$pruned $h"
+    else
+      STATE_CHANGED=1
+    fi
+  done
+  DL_NOTIFIED="${pruned# }"
+}
+
 # ---- main ----
 
 check_issues
 check_resources
 [[ -x "$FIX_SYNCTHING" ]] && check_syncthing_autofix || true
 check_cron_completion
+check_downloads_completion
 
 if [[ $STATE_CHANGED -eq 1 ]]; then
   save_state

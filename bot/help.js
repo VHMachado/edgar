@@ -31,6 +31,8 @@ const HELP = [
   'book <name> — search an ebook',
   'grab <n> — request result n (valid for 5 min)',
   'queue — what is downloading',
+  'media up — start the media stack',
+  'media down — stop the media stack',
   '',
   '*Other*',
   'heartbeat — push the status summary now',
