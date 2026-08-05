@@ -19,22 +19,7 @@ It can read your Vaultwarden vault, restart itself, and run jobs you configure.
 **No LLM.** Messages go through a regex table to a shell script and back. Same
 input, same output, every time — and no API bill.
 
-```
-🟢 ALL OK — 14:30
-
-📡 Services
-✅ 🛡️ pihole — FTL up, DNS resolving (example.com -> 93.184.216.34)
-✅ 🌐 unbound — Recursion up on port 5335 (example.com -> 93.184.216.34)
-✅ 🔄 syncthing — Unit active, API answering, all folders healthy
-✅ 🔒 tailscale — Connected, IP 100.x.y.z, 4 active peer(s)
-✅ 🔑 vaultwarden — Container running, HTTPS answering
-
-📊 Hardware
-🖥️ CPU: 0.21/core (21%)
-🧠 RAM: 43.8% (2360MB/5390MB)
-💿 /: 38% (204GB free)
-⏱️ Uptime: 12d 4h 18m
-```
+<video src="https://github.com/VHMachado/edgar/raw/main/docs/edgar-demo.mp4" controls width="100%"></video>
 
 <p align="center"><img src="docs/rainbow-divider.png" alt="" width="100%" height="4"></p>
 
