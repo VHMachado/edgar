@@ -19,7 +19,7 @@ It can read your Vaultwarden vault, restart itself, and run jobs you configure.
 **No LLM.** Messages go through a regex table to a shell script and back. Same
 input, same output, every time — and no API bill.
 
-<video src="https://github.com/VHMachado/edgar/raw/main/docs/edgar-demo.mp4" controls width="100%"></video>
+<video src="https://github.com/VHMachado/edgar/raw/main/docs/edgar_demo.mp4" controls width="100%"></video>
 
 <p align="center"><img src="docs/rainbow-divider.png" alt="" width="100%" height="4"></p>
 
