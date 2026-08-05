@@ -221,7 +221,7 @@ Anything unrecognised gets the help text, so a typo never does something
 surprising.
 
 <a id="customizing-edgar"></a>
-## 🌈 Personalizando o Edgar
+## 🌈 Customizing Edgar
 
 <details>
 <summary><strong>Changing the commands</strong></summary>
