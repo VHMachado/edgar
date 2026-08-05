@@ -38,18 +38,18 @@ input, same output, every time — and no API bill.
 
 <p align="center"><img src="docs/rainbow-divider.png" alt="" width="100%" height="4"></p>
 
-## 🐅 Índice
+## 🐅 Index
 
-- [Como as peças se encaixam](#how-it-fits-together)
-- [Requisitos](#requirements)
-- [Instalação](#install)
-- [Comandos](#commands)
-- [Personalizando o Edgar](#customizing-edgar)
-- [A API HTTP](#the-http-api)
-- [O contrato JSON](#the-json-contract)
-- [Segurança](#security)
+- [How it fits together](#how-it-fits-together)
+- [Requirements](#requirements)
+- [Install](#install)
+- [Commands](#commands)
+- [Customizing Edgar](#customizing-edgar)
+- [The HTTP API](#the-http-api)
+- [The JSON Contract](#the-json-contract)
+- [Security](#security)
 - [Troubleshooting](#troubleshooting)
-- [Licença](#license)
+- [License](#license)
 
 <a id="how-it-fits-together"></a>
 ## 🌈 How it fits together
