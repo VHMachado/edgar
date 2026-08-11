@@ -180,6 +180,72 @@ check_vaultwarden() {
 }
 
 # -----------------------------------------------------------
+# SearXNG — metasearch. Container up and the page answering.
+# -----------------------------------------------------------
+check_searxng() {
+    local container_state code
+    container_state=$(docker inspect searxng --format '{{.State.Status}}' 2>/dev/null)
+    if [ "$container_state" != "running" ]; then
+        add_service "searxng" "error" "Container not running (state: ${container_state:-missing})"
+        return
+    fi
+    code=$(curl -s -o /dev/null -w '%{http_code}' --max-time "$SERVICE_TIMEOUT" \
+        "$SEARXNG_URL/" 2>/dev/null)
+    if [ "$code" != "200" ]; then
+        add_service "searxng" "warn" "Container running but HTTP returned ${code:-nothing} at $SEARXNG_URL"
+        return
+    fi
+    add_service "searxng" "ok" "Container running, search answering at $SEARXNG_URL"
+}
+
+# -----------------------------------------------------------
+# Media stack — one aggregate entry, not one per container.
+# Nine separate lines in a status message is noise; what matters
+# is whether any of them is down.
+# -----------------------------------------------------------
+check_media() {
+    local expected total=0 down="" n_down up
+
+    if [ -z "${MEDIA_COMPOSE_FILE:-}" ]; then
+        add_service "media" "error" "MEDIA_COMPOSE_FILE is not set in config.env"
+        return
+    fi
+
+    # The list comes from the compose file, so swapping a service out of the
+    # stack needs no edit here. A hardcoded list already broke once, the day
+    # one download client replaced another.
+    #
+    # This works because every service in that stack uses
+    # container_name == service name. Immich does not — see check_immich.
+    expected=$(docker compose -f "$MEDIA_COMPOSE_FILE" config --services 2>/dev/null)
+    if [ -z "$expected" ]; then
+        add_service "media" "error" "Could not read $MEDIA_COMPOSE_FILE"
+        return
+    fi
+
+    for c in $expected; do
+        total=$((total + 1))
+        if [ "$(docker inspect "$c" --format '{{.State.Status}}' 2>/dev/null)" != "running" ]; then
+            down="$down $c"
+        fi
+    done
+
+    n_down=$(echo $down | wc -w)
+    up=$((total - n_down))
+
+    if [ "$n_down" -eq "$total" ]; then
+        add_service "media" "error" "Whole stack is down (0/$total)"
+        return
+    fi
+    if [ "$n_down" -gt 0 ]; then
+        add_service "media" "warn" "$up/$total containers running - down:$down"
+        return
+    fi
+
+    add_service "media" "ok" "$up/$total containers running"
+}
+
+# -----------------------------------------------------------
 # Immich — photo library. Whole compose project, plus the API.
 # -----------------------------------------------------------
 check_immich() {

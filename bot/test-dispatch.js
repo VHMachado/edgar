@@ -46,6 +46,13 @@ const CASES = [
   ['unbound', 'statusService'],
   ['vaultwarden?', 'statusService'],
   ['immich', 'statusService'],
+  ['searxng', 'statusService'],
+  // Bare "media" is a status query; "media up"/"media down" have their own
+  // entries earlier in the table and must keep winning.
+  ['media', 'statusService'],
+  ['media up', 'mediaUp'],
+  ['media down', 'mediaDown'],
+  ['media stop', 'mediaDown'],
   ['cpu', 'resource'],
   ['disk', 'resource'],
   ['disks', 'resource'],
@@ -87,8 +94,6 @@ const CASES = [
   // A search needs an argument — a bare word is not a search.
   ['movie', 'help'],
   ['book', 'help'],
-  // "media" alone powers nothing — the verb is required.
-  ['media', 'help'],
   // "grab" only takes a number, so this is not a pick.
   ['grab the milk', 'help'],
 
