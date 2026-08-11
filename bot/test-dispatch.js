@@ -45,6 +45,7 @@ const CASES = [
   ['pihole', 'statusService'],
   ['unbound', 'statusService'],
   ['vaultwarden?', 'statusService'],
+  ['immich', 'statusService'],
   ['cpu', 'resource'],
   ['disk', 'resource'],
   ['disks', 'resource'],

@@ -12,3 +12,6 @@ $RECYCLE.BIN
 System Volume Information
 *.ts.net.crt
 *.ts.net.key
+
+# Monitoring JSON, rotated by cleanup.sh. Regenerated every 5 minutes.
+/opt/nas-monitor/logs

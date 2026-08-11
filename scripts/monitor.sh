@@ -180,6 +180,52 @@ check_vaultwarden() {
 }
 
 # -----------------------------------------------------------
+# Immich — photo library. Whole compose project, plus the API.
+# -----------------------------------------------------------
+check_immich() {
+    local expected running down n_down total code
+    local -a compose=(docker compose)
+
+    # Both files on purpose: the override is where a disabled machine-learning
+    # service is parked behind a profile. With only the base file that service
+    # counts again and the stack looks permanently one container short.
+    compose+=(-f "$IMMICH_DIR/docker-compose.yml")
+    [ -f "$IMMICH_DIR/docker-compose.override.yml" ] &&
+        compose+=(-f "$IMMICH_DIR/docker-compose.override.yml")
+
+    expected=$("${compose[@]}" config --services 2>/dev/null | sort)
+    if [ -z "$expected" ]; then
+        add_service "immich" "error" "Could not read the compose project in $IMMICH_DIR"
+        return
+    fi
+    total=$(echo "$expected" | wc -l)
+
+    # Service name != container_name here (immich-server -> immich_server), so
+    # the down list comes from compose itself, not from docker inspect <name>.
+    running=$("${compose[@]}" ps --status running --format '{{.Service}}' 2>/dev/null | sort)
+    down=$(comm -23 <(echo "$expected") <(echo "$running") | tr '\n' ' ')
+    n_down=$(echo $down | wc -w)
+
+    if [ "$n_down" -eq "$total" ]; then
+        add_service "immich" "error" "Whole stack is down (0/$total)"
+        return
+    fi
+    if [ "$n_down" -gt 0 ]; then
+        add_service "immich" "warn" "$((total - n_down))/$total containers running - down: $down"
+        return
+    fi
+
+    code=$(curl -s -o /dev/null -w '%{http_code}' --max-time "$SERVICE_TIMEOUT" \
+        "$IMMICH_URL/api/server/ping" 2>/dev/null)
+    if [ "$code" != "200" ]; then
+        add_service "immich" "warn" "Containers up but HTTP returned ${code:-nothing} at $IMMICH_URL"
+        return
+    fi
+
+    add_service "immich" "ok" "$total/$total containers running, API answering at $IMMICH_URL"
+}
+
+# -----------------------------------------------------------
 # Run the configured checks
 # -----------------------------------------------------------
 for check in $CHECKS; do
