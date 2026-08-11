@@ -66,7 +66,7 @@ const DISPATCH = [
   { pattern: /^\s*(?:resources|usage|how\s+busy)\s*\??\s*$/i, handler: () => h.resourcesFull() },
 
   // One service
-  { pattern: /^\s*(pihole|unbound|syncthing|tailscale|samba|vaultwarden|immich)\s*\??\s*$/i,
+  { pattern: /^\s*(pihole|unbound|syncthing|tailscale|samba|vaultwarden|searxng|immich|media)\s*\??\s*$/i,
     handler: (msg, match) => h.statusService(match[1].toLowerCase()) },
 
   // Everything else
