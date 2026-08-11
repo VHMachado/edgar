@@ -28,7 +28,9 @@ input, same output, every time — and no API bill.
 ✅ 🔄 syncthing — Unit active, API answering, all folders healthy
 ✅ 🔒 tailscale — Connected, IP 100.x.y.z, 4 active peer(s)
 ✅ 🔑 vaultwarden — Container running, HTTPS answering
+✅ 🔍 searxng — Container running, search answering
 ✅ 📷 immich — 3/3 containers running, API answering
+✅ 🎬 media — 9/9 containers running
 
 📊 Hardware
 🖥️ CPU: 0.21/core (21%)
@@ -201,7 +203,7 @@ Text the bot `status`. You should get an answer.
 | `status`, `hi`, `good morning` | every service, one line each |
 | `issues` | only what is broken |
 | `cron` | last result of each wrapped job |
-| `pihole`, `unbound`, `syncthing`, `tailscale`, `samba`, `vaultwarden`, `immich` | one service |
+| `pihole`, `unbound`, `syncthing`, `tailscale`, `samba`, `vaultwarden`, `searxng`, `immich`, `media` | one service |
 | `cpu`, `ram`, `swap`, `disk`, `uptime` | one metric |
 | `resources` | all of them |
 | `panel pihole`, `panel syncthing`, `panel tailscale` | a detailed panel |

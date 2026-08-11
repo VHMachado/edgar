@@ -77,7 +77,9 @@ const SERVICE_EMOJIS = {
   samba: '📁',
   vaultwarden: '🔑',
   unbound: '🌐',
+  searxng: '🔍',
   immich: '📷',
+  media: '🎬',
 };
 
 function formatStatusAll(json) {
